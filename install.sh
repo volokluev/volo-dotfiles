@@ -7,6 +7,8 @@ LOCAL_OPT="$HOME/.local/opt"
 NVIM_MIN_VERSION="0.9.0"
 NVIM_SOURCE_CONFIG="$DOTFILES_DIR/.config/nvim"
 
+export PATH="$LOCAL_BIN:$PATH"
+
 log() {
   printf '\n==> %s\n' "$*"
 }
@@ -44,14 +46,27 @@ append_shell_block() {
   run touch "$rc_file"
 
   if grep -q "BEGIN $marker" "$rc_file"; then
-    log "Shell setup already present in $rc_file"
-    return
+    local tmp_file
+    tmp_file="$(mktemp)"
+
+    log "Updating shell setup in $rc_file"
+    awk -v marker="$marker" '
+      $0 == "# BEGIN " marker { skipping = 1; next }
+      $0 == "# END " marker { skipping = 0; next }
+      !skipping { print }
+    ' "$rc_file" >"$tmp_file"
+    cat "$tmp_file" >"$rc_file"
+    run rm -f "$tmp_file"
+  else
+    log "Adding shell setup to $rc_file"
   fi
 
-  log "Adding shell setup to $rc_file"
   {
     printf '\n# BEGIN %s\n' "$marker"
     printf 'export PATH="$HOME/.local/bin:$PATH"\n'
+    printf 'export EDITOR="vim"\n'
+    printf 'export VISUAL="$EDITOR"\n'
+    printf 'export GIT_EDITOR="$EDITOR"\n'
     printf '\n'
     printf 'if command -v fzf >/dev/null 2>&1; then\n'
     printf '  if [ -n "${BASH_VERSION:-}" ]; then\n'
@@ -201,6 +216,19 @@ install_neovim() {
   run rm -rf "$tmpdir"
 }
 
+setup_default_editor() {
+  local nvim_path
+  nvim_path="$(command -v nvim || true)"
+
+  if [ -z "$nvim_path" ]; then
+    warn "Neovim is not available; cannot create vim default editor shim"
+    return 1
+  fi
+
+  log "Setting vim as the default editor"
+  run ln -sf "$nvim_path" "$LOCAL_BIN/vim"
+}
+
 backup_path() {
   local path="$1"
   local backup="$path.bak.$(date +%Y%m%d%H%M%S)"
@@ -253,6 +281,7 @@ main() {
   ensure_local_bin
   install_packages
   install_neovim
+  setup_default_editor
   setup_shell
   install_nvim_config
 

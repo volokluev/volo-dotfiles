@@ -5,6 +5,7 @@ Codespaces dotfiles for installing:
 - fzf, with shell integration for Bash and Zsh
 - Neovim, using the latest stable prebuilt Linux archive when needed
 - LazyVim, using the tracked config in `.config/nvim`
+- `vim` as the default editor, backed by Neovim
 
 GitHub Codespaces runs `install.sh` automatically when this repository is selected as your dotfiles repository.
 
