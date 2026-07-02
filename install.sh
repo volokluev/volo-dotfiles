@@ -5,6 +5,7 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_BIN="$HOME/.local/bin"
 LOCAL_OPT="$HOME/.local/opt"
 NVIM_MIN_VERSION="0.9.0"
+NVIM_SOURCE_CONFIG="$DOTFILES_DIR/.config/nvim"
 
 log() {
   printf '\n==> %s\n' "$*"
@@ -208,27 +209,32 @@ backup_path() {
   run mv "$path" "$backup"
 }
 
-is_lazyvim_config() {
+is_repo_nvim_config() {
   local nvim_config="$1"
 
-  [ -f "$nvim_config/lua/config/lazy.lua" ] && grep -q 'LazyVim/LazyVim' "$nvim_config/lua/config/lazy.lua"
+  [ -L "$nvim_config" ] && [ "$(readlink "$nvim_config")" = "$NVIM_SOURCE_CONFIG" ]
 }
 
-install_lazyvim() {
+install_nvim_config() {
   local config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
   local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
   local state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
   local cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
   local nvim_config="$config_home/nvim"
 
-  if is_lazyvim_config "$nvim_config"; then
-    log "LazyVim is already installed at $nvim_config"
+  if [ ! -d "$NVIM_SOURCE_CONFIG" ]; then
+    warn "Neovim config was not found at $NVIM_SOURCE_CONFIG"
+    return 1
+  fi
+
+  if is_repo_nvim_config "$nvim_config"; then
+    log "Neovim config is already linked from $NVIM_SOURCE_CONFIG"
     return
   fi
 
-  log "Installing LazyVim starter"
+  log "Installing Neovim config from dotfiles"
 
-  if [ -e "$nvim_config" ]; then
+  if [ -e "$nvim_config" ] || [ -L "$nvim_config" ]; then
     backup_path "$nvim_config"
   fi
 
@@ -239,8 +245,7 @@ install_lazyvim() {
   done
 
   run mkdir -p "$config_home"
-  run git clone https://github.com/LazyVim/starter "$nvim_config"
-  run rm -rf "$nvim_config/.git"
+  run ln -s "$NVIM_SOURCE_CONFIG" "$nvim_config"
 }
 
 main() {
@@ -249,7 +254,7 @@ main() {
   install_packages
   install_neovim
   setup_shell
-  install_lazyvim
+  install_nvim_config
 
   log "Done. Open a new shell, then run nvim. Inside Neovim, run :LazyHealth after plugins finish installing."
 }

@@ -4,7 +4,7 @@ Codespaces dotfiles for installing:
 
 - fzf, with shell integration for Bash and Zsh
 - Neovim, using the latest stable prebuilt Linux archive when needed
-- LazyVim, using the official starter config
+- LazyVim, using the tracked config in `.config/nvim`
 
 GitHub Codespaces runs `install.sh` automatically when this repository is selected as your dotfiles repository.
 
@@ -23,4 +23,4 @@ Changes here apply to new codespaces only.
 ./install.sh
 ```
 
-The installer is safe to rerun. If an existing Neovim config or state directory is present and is not already LazyVim, it is moved to a timestamped `.bak.YYYYMMDDHHMMSS` path before LazyVim is installed.
+The installer is safe to rerun. If an existing Neovim config or state directory is present and is not already linked to this repository, it is moved to a timestamped `.bak.YYYYMMDDHHMMSS` path before `.config/nvim` is linked into place.
